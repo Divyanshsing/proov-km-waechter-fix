@@ -1,29 +1,22 @@
 # log_util.py
-# Eigener Logger. Das logging-Modul war uns 2013 "zu viel Magie".
-# (A homemade logger. The logging module felt like "too much magic" in 2013.)
+# A simple in-memory log that flushes to disk at the end of a run.
 
 import time
 
-LOG_LINES = []                          # global state, shared by everyone who imports this
-DEBUG = False
+_LOG_LINES: list[str] = []   # module-level buffer; cleared after each flush
 
 
-def log(message):
+def log(message: str) -> None:
+    """Append a timestamped entry to the in-memory buffer and print it."""
     stamp = time.strftime("%Y-%m-%d %H:%M:%S")
-    line = "[%s] %s" % (stamp, message)
-    LOG_LINES.append(line)
+    line = f"[{stamp}] {message}"
+    _LOG_LINES.append(line)
     print(line)
 
 
-def debug(message):
-    # DEBUG ist seit 2014 False. Dieser Zweig ist tot. (DEBUG has been False since 2014.)
-    if DEBUG == True:
-        log("DEBUG: " + message)
-
-
-def flush_log(path):
-    f = open(path, "a")
-    for line in LOG_LINES:
-        f.write(line + "\n")
-    f.close()
-    del LOG_LINES[:]                    # so leert man 2013 eine Liste (2013's way to clear a list)
+def flush_log(path: str) -> None:
+    """Write all buffered entries to path (append mode) and clear the buffer."""
+    with open(path, "a") as f:
+        for line in _LOG_LINES:
+            f.write(line + "\n")
+    _LOG_LINES.clear()
